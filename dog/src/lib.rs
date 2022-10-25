@@ -10,6 +10,7 @@ pub struct Config {
     files: Vec<String>,
     number_lines: bool,
     number_nonblank_lines: bool,
+    display_d: bool,
 }
 
 pub fn run(config: Config) -> MyResult<()> {
@@ -31,6 +32,8 @@ pub fn run(config: Config) -> MyResult<()> {
                         } else {
                             println!("{:>6}\t{}", cnt, line);
                         }
+                    } else if config.display_d {
+                        println!("{}$", line);
                     } else {
                         println!("{}", line);
                     }
@@ -73,6 +76,15 @@ pub fn get_args() -> MyResult<Config> {
                 .help("Number non-blank lines")
                 .takes_value(false),
         )
+        .arg(
+            Arg::with_name("display_d")
+                .short("e")
+                .help(
+                    "Display non-print characters, 
+                 and display a dollar ($) sign at the end of each line",
+                )
+                .takes_value(false),
+        )
         .about("Terminal application like cat but it's made in rust and called dog")
         .get_matches();
 
@@ -80,5 +92,6 @@ pub fn get_args() -> MyResult<Config> {
         files: matches.values_of_lossy("files").unwrap(),
         number_lines: matches.is_present("number"),
         number_nonblank_lines: matches.is_present("number_nonblank"),
+        display_d: matches.is_present("display_d"),
     })
 }

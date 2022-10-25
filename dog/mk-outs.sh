@@ -18,12 +18,15 @@ for FILE in $ALL; do
     cat    $FILE > ${OUT_DIR}/${BASENAME}.out
     cat -n $FILE > ${OUT_DIR}/${BASENAME}.n.out
     cat -b $FILE > ${OUT_DIR}/${BASENAME}.b.out
+    cat -e $FILE > ${OUT_DIR}/${BASENAME}.e.out
 done
 
 cat    $ALL > $OUT_DIR/all.out
 cat -n $ALL > $OUT_DIR/all.n.out
 cat -b $ALL > $OUT_DIR/all.b.out
+cat -e $ALL > $OUT_DIR/all.e.out
 
 cat    < $BUSTLE > $OUT_DIR/$(basename $BUSTLE).stdin.out
 cat -n < $BUSTLE > $OUT_DIR/$(basename $BUSTLE).n.stdin.out
 cat -b < $BUSTLE > $OUT_DIR/$(basename $BUSTLE).b.stdin.out
+cat -e < $BUSTLE > $OUT_DIR/$(basename $BUSTLE).e.stdin.out

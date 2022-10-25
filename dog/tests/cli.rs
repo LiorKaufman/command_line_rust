@@ -64,11 +64,7 @@ fn run(args: &[&str], expected_file: &str) -> TestResult {
 }
 
 // --------------------------------------------------
-fn run_stdin(
-    input_file: &str,
-    args: &[&str],
-    expected_file: &str,
-) -> TestResult {
+fn run_stdin(input_file: &str, args: &[&str], expected_file: &str) -> TestResult {
     let input = fs::read_to_string(input_file)?;
     let expected = fs::read_to_string(expected_file)?;
     Command::cargo_bin(PRG)?
@@ -144,6 +140,12 @@ fn fox_b() -> TestResult {
 
 // --------------------------------------------------
 #[test]
+fn fox_e() -> TestResult {
+    run(&["-e", FOX], "tests/expected/fox.txt.e.out")
+}
+
+// --------------------------------------------------
+#[test]
 fn spiders() -> TestResult {
     run(&[SPIDERS], "tests/expected/spiders.txt.out")
 }
@@ -165,6 +167,11 @@ fn spiders_b() -> TestResult {
 
 // --------------------------------------------------
 #[test]
+fn spiders_e() -> TestResult {
+    run(&["-e", SPIDERS], "tests/expected/spiders.txt.e.out")
+}
+// --------------------------------------------------
+#[test]
 fn bustle() -> TestResult {
     run(&[BUSTLE], "tests/expected/the-bustle.txt.out")
 }
@@ -180,7 +187,11 @@ fn bustle_n() -> TestResult {
 fn bustle_b() -> TestResult {
     run(&["-b", BUSTLE], "tests/expected/the-bustle.txt.b.out")
 }
-
+// --------------------------------------------------
+#[test]
+fn bustle_e() -> TestResult {
+    run(&["-e", BUSTLE], "tests/expected/the-bustle.txt.e.out")
+}
 // --------------------------------------------------
 #[test]
 fn all() -> TestResult {
@@ -197,4 +208,9 @@ fn all_n() -> TestResult {
 #[test]
 fn all_b() -> TestResult {
     run(&[FOX, SPIDERS, BUSTLE, "-b"], "tests/expected/all.b.out")
+}
+// --------------------------------------------------
+#[test]
+fn all_e() -> TestResult {
+    run(&[FOX, SPIDERS, BUSTLE, "-e"], "tests/expected/all.e.out")
 }
