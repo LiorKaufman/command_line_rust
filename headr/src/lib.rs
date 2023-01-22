@@ -1,8 +1,7 @@
 use clap::{App, Arg};
 use std::error::Error;
-
 use std::fs::File;
-use std::io::{self, BufRead, BufReader};
+use std::io::{self, BufRead, BufReader, Read};
 
 type MyResult<T> = Result<T, Box<dyn Error>>;
 
@@ -23,7 +22,7 @@ pub fn get_args() -> MyResult<Config> {
                 .short("n")
                 .long("lines")
                 .value_name("LINES")
-                .help("number lines")
+                .help("Number of lines")
                 .default_value("10"),
         )
         .arg(
@@ -31,9 +30,9 @@ pub fn get_args() -> MyResult<Config> {
                 .short("c")
                 .long("bytes")
                 .value_name("BYTES")
-                .help("Shows the output in bytes instead of text")
+                .takes_value(true)
                 .conflicts_with("lines")
-                .takes_value(true),
+                .help("Number of bytes"),
         )
         .arg(
             Arg::with_name("files")
@@ -44,19 +43,20 @@ pub fn get_args() -> MyResult<Config> {
         )
         .get_matches();
 
-    let files = matches.values_of_lossy("files").unwrap();
     let lines = matches
         .value_of("lines")
         .map(parse_positive_int)
         .transpose()
         .map_err(|e| format!("illegal line count -- {}", e))?;
+
     let bytes = matches
         .value_of("bytes")
         .map(parse_positive_int)
         .transpose()
         .map_err(|e| format!("illegal byte count -- {}", e))?;
+
     Ok(Config {
-        files,
+        files: matches.values_of_lossy("files").unwrap(),
         lines: lines.unwrap(),
         bytes,
     })
@@ -68,12 +68,60 @@ fn open(filename: &str) -> MyResult<Box<dyn BufRead>> {
         _ => Ok(Box::new(BufReader::new(File::open(filename)?))),
     }
 }
+
+fn get_line_count_from_file(file_path: &String) -> Result<usize, io::Error> {
+    let input = File::open(file_path)?;
+    let buffered = BufReader::new(input);
+    let cnt = buffered.lines().count();
+    Ok(cnt)
+}
+
+#[test]
+fn test_get_line_count_from_file() {
+    let res = get_line_count_from_file(&"./tests/inputs/one.txt".to_string());
+    assert!(res.is_ok());
+    assert_eq!(res.unwrap(), 1);
+
+    let res = get_line_count_from_file(&"./tests/inputs/empty.txt".to_string());
+    assert!(res.is_ok());
+    assert_eq!(res.unwrap(), 0);
+
+    let res = get_line_count_from_file(&"./tests/inputs/ten.txt".to_string());
+    assert!(res.is_ok());
+    assert_eq!(res.unwrap(), 10);
+}
+// --------------------------------------------------
 pub fn run(config: Config) -> MyResult<()> {
-    for filename in config.files {
-        match open(&filename) {
-            Err(err) => eprintln!("Failed to open {}: {}", filename, err),
-            Ok(_) => {
-                println!("Opened {}", filename)
+    let num_files = config.files.len();
+
+    for (file_num, filename) in config.files.iter().enumerate() {
+        match open(filename) {
+            Err(err) => eprintln!("{}: {}", filename, err),
+            Ok(mut file) => {
+                if num_files > 1 {
+                    println!(
+                        "{}==> {} <==",
+                        if file_num > 0 { "\n" } else { "" },
+                        &filename
+                    );
+                }
+
+                if let Some(num_bytes) = config.bytes {
+                    let mut handle = file.take(num_bytes as u64);
+                    let mut buffer = vec![0; num_bytes];
+                    let bytes_read = handle.read(&mut buffer)?;
+                    print!("{}", String::from_utf8_lossy(&buffer[..bytes_read]));
+                } else {
+                    let mut line = String::new();
+                    for _ in 0..config.lines {
+                        let bytes = file.read_line(&mut line)?;
+                        if bytes == 0 {
+                            break;
+                        }
+                        print!("{}", line);
+                        line.clear();
+                    }
+                }
             }
         }
     }
