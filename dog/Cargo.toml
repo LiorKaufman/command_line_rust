@@ -7,6 +7,8 @@ edition = "2021"
 
 [dependencies]
 clap = "2.33"
+encoding_rs = "0.8.32"
+encoding_rs_io = "0.1.7"
 
 [dev-dependencies]
 assert_cmd = "2"

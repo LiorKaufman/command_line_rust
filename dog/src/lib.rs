@@ -2,6 +2,8 @@ use clap::{App, Arg};
 use std::error::Error;
 use std::fs::File;
 use std::io::{self, BufRead, BufReader};
+use encoding_rs::WINDOWS_1252;
+use encoding_rs_io::DecodeReaderBytesBuilder;
 
 type MyResult<T> = Result<T, Box<dyn Error>>;
 
@@ -21,22 +23,38 @@ pub fn run(config: Config) -> MyResult<()> {
             Ok(file) => {
                 let mut cnt = 0;
                 for line_result in file.lines() {
-                    let line = line_result?;
-                    cnt += 1;
-                    if config.number_lines {
-                        println!("{:>6}\t{}", cnt, line);
-                    } else if config.number_nonblank_lines {
-                        if line.is_empty() {
-                            println!("{}", line);
-                            cnt -= 1;
-                        } else {
-                            println!("{:>6}\t{}", cnt, line);
+                    // check if line contains valid utf-8
+                    match line_result {
+                        Ok(line) => {
+                            cnt += 1;
+                            if config.number_lines {
+                                println!("{:>6}\t{}", cnt, line);
+                            } else if config.number_nonblank_lines {
+                                if line.is_empty() {
+                                    println!("{}", line);
+                                    cnt -= 1;
+                                } else {
+                                    println!("{:>6}\t{}", cnt, line);
+                                }
+                            } else if config.display_d {
+                                // line.u
+                                println!("{}$", line);
+                            } else {
+                                println!("{}", line);
+                            }
                         }
-                    } else if config.display_d {
-                        // line.u
-                        println!("{}$", line);
-                    } else {
-                        println!("{}", line);
+                        // line contains invalid utf-8
+                        Err(err) => {
+                            let file = File::open(filename.clone())?;
+                            let mut reader = BufReader::new(
+                                DecodeReaderBytesBuilder::new()
+                                    .encoding(Some(WINDOWS_1252))
+                                    .build(file),
+                            );
+                            for line in reader.lines() {
+                                println!("{:?}", line?);
+                            }
+                        }
                     }
                 }
             }
