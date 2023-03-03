@@ -55,6 +55,7 @@ fn skips_bad_file() -> TestResult {
 // --------------------------------------------------
 fn run(args: &[&str], expected_file: &str) -> TestResult {
     let expected = fs::read_to_string(expected_file)?;
+    println!("ho");
     Command::cargo_bin(PRG)?
         .args(args)
         .assert()
@@ -81,6 +82,14 @@ fn run_stdin(input_file: &str, args: &[&str], expected_file: &str) -> TestResult
 fn bustle_stdin() -> TestResult {
     run_stdin(BUSTLE, &["-"], "tests/expected/the-bustle.txt.stdin.out")
 }
+
+// --------------------------------------------------
+#[test]
+fn bustle_stdin_e() -> TestResult {
+    run_stdin(BUSTLE, &["-e"], "tests/expected/the-bustle.txt.e.stdin.out")
+}
+
+
 
 // --------------------------------------------------
 #[test]
@@ -190,7 +199,7 @@ fn bustle_b() -> TestResult {
 // --------------------------------------------------
 #[test]
 fn bustle_e() -> TestResult {
-    run(&["-e", BUSTLE], "tests/expected/the-bustle.txt.e.out")
+    run(&["-b", BUSTLE], "tests/expected/the-bustle.txt.e.out")
 }
 // --------------------------------------------------
 #[test]

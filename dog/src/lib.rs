@@ -33,6 +33,7 @@ pub fn run(config: Config) -> MyResult<()> {
                             println!("{:>6}\t{}", cnt, line);
                         }
                     } else if config.display_d {
+                        // line.u
                         println!("{}$", line);
                     } else {
                         println!("{}", line);
