@@ -3,6 +3,8 @@ use predicates::prelude::*;
 use rand::{distributions::Alphanumeric, Rng};
 use std::error::Error;
 use std::fs;
+use std::fs::File;
+use std::io::{BufRead, BufReader};
 
 type TestResult = Result<(), Box<dyn Error>>;
 
@@ -55,7 +57,6 @@ fn skips_bad_file() -> TestResult {
 // --------------------------------------------------
 fn run(args: &[&str], expected_file: &str) -> TestResult {
     let expected = fs::read_to_string(expected_file)?;
-    println!("ho");
     Command::cargo_bin(PRG)?
         .args(args)
         .assert()
@@ -64,6 +65,16 @@ fn run(args: &[&str], expected_file: &str) -> TestResult {
     Ok(())
 }
 
+// --------------------------------------------------
+fn run_invalid_utf_8(args: &[&str], expected_file: &str) -> TestResult {
+    let expected = get_invalid_file_to_string(expected_file);
+    Command::cargo_bin(PRG)?
+        .args(args)
+        .assert()
+        .success()
+        .stdout(expected);
+    Ok(())
+}
 // --------------------------------------------------
 fn run_stdin(input_file: &str, args: &[&str], expected_file: &str) -> TestResult {
     let input = fs::read_to_string(input_file)?;
@@ -77,6 +88,37 @@ fn run_stdin(input_file: &str, args: &[&str], expected_file: &str) -> TestResult
     Ok(())
 }
 
+fn get_invalid_file_to_string(file: &str) -> String {
+    println!("{}", file);
+    let file = File::open(file).unwrap();
+    let mut reader = BufReader::new(file);
+    let mut buf = vec![];
+    let mut strBuffer = String::new();
+
+    while let Ok(_) = reader.read_until(b'\n', &mut buf) {
+        if buf.is_empty() {
+            break;
+        }
+        let line = String::from_utf8_lossy(&buf);
+        strBuffer.push_str(&line);
+
+        println!("{}", line);
+        buf.clear();
+    }
+    strBuffer
+}
+// --------------------------------------------------
+fn run_stdin_no_utf8(input_file: &str, args: &[&str], expected_file: &str) -> TestResult {
+    let input = fs::read_to_string(input_file)?;
+    let expected = get_invalid_file_to_string(expected_file);
+    Command::cargo_bin(PRG)?
+        .args(args)
+        .write_stdin(input)
+        .assert()
+        .success()
+        .stdout(expected);
+    Ok(())
+}
 // --------------------------------------------------
 #[test]
 fn bustle_stdin() -> TestResult {
@@ -86,10 +128,12 @@ fn bustle_stdin() -> TestResult {
 // --------------------------------------------------
 #[test]
 fn bustle_stdin_e() -> TestResult {
-    run_stdin(BUSTLE, &["-e"], "tests/expected/the-bustle.txt.e.stdin.out")
+    run_stdin_no_utf8(
+        BUSTLE,
+        &["-e", "-"],
+        "tests/expected/the-bustle.txt.e.stdin.out",
+    )
 }
-
-
 
 // --------------------------------------------------
 #[test]
@@ -150,7 +194,7 @@ fn fox_b() -> TestResult {
 // --------------------------------------------------
 #[test]
 fn fox_e() -> TestResult {
-    run(&["-e", FOX], "tests/expected/fox.txt.e.out")
+    run_invalid_utf_8(&["-e", FOX], "tests/expected/fox.txt.e.out")
 }
 
 // --------------------------------------------------
@@ -199,7 +243,7 @@ fn bustle_b() -> TestResult {
 // --------------------------------------------------
 #[test]
 fn bustle_e() -> TestResult {
-    run(&["-b", BUSTLE], "tests/expected/the-bustle.txt.e.out")
+    run_invalid_utf_8(&["-b", BUSTLE], "tests/expected/the-bustle.txt.e.out")
 }
 // --------------------------------------------------
 #[test]
@@ -221,5 +265,5 @@ fn all_b() -> TestResult {
 // --------------------------------------------------
 #[test]
 fn all_e() -> TestResult {
-    run(&[FOX, SPIDERS, BUSTLE, "-e"], "tests/expected/all.e.out")
+    run_invalid_utf_8(&[FOX, SPIDERS, BUSTLE, "-e"], "tests/expected/all.e.out")
 }
